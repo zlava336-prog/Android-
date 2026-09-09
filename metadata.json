@@ -1,0 +1,6 @@
+{
+  "name": "Phone Agent",
+  "description": "Production-oriented personal Android companion agent and Material 3 control dashboard for safe, authorized social media publishing and link extraction.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
