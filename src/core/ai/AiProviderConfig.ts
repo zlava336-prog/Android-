@@ -38,6 +38,8 @@ export class AiProviderConfig {
     try {
       if (typeof process !== 'undefined' && process.env && process.env.GROQ_API_KEY) {
         this.apiKey = process.env.GROQ_API_KEY.trim();
+      } else if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.VITE_GROQ_API_KEY) {
+        this.apiKey = String((import.meta as any).env.VITE_GROQ_API_KEY).trim();
       }
     } catch {
       // Sandboxed or browser context

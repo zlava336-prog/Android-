@@ -93,6 +93,57 @@ export class ProductPolicyValidator {
   }
 
   /**
+   * Evaluates a single text string against policy and truth-in-advertising rules.
+   */
+  public validateText(text: string, location: string = 'text'): { verdict: PolicyVerdict; warnings: ClaimWarning[] } {
+    const allWarnings: ClaimWarning[] = [];
+
+    // 1. Run through base ContentClaimValidator
+    const baseWarnings = this.contentClaimValidator.validateText(text, location);
+    allWarnings.push(...baseWarnings);
+
+    // 2. Run through product-specific policy rules
+    for (const rule of this.additionalRules) {
+      if (rule.regex.test(text)) {
+        const match = text.match(rule.regex);
+        allWarnings.push({
+          id: `pw_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          category: rule.category,
+          flaggedText: match ? match[0] : text.slice(0, 40),
+          reason: rule.reason,
+          severity: rule.severity,
+          location: location,
+        });
+      }
+    }
+
+    // Deduplicate warnings by location and flaggedText
+    const seen = new Set<string>();
+    const deduplicatedWarnings: ClaimWarning[] = [];
+    for (const w of allWarnings) {
+      const key = `${w.location}::${w.category}::${w.flaggedText.toLowerCase()}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduplicatedWarnings.push(w);
+      }
+    }
+
+    const blockedCount = deduplicatedWarnings.filter(w => w.severity === 'BLOCK').length;
+    const warnCount = deduplicatedWarnings.filter(w => w.severity === 'WARN').length;
+    let verdict: PolicyVerdict = 'PASS';
+    if (blockedCount > 0) {
+      verdict = 'BLOCK';
+    } else if (warnCount > 0) {
+      verdict = 'WARN';
+    }
+
+    return {
+      verdict,
+      warnings: deduplicatedWarnings,
+    };
+  }
+
+  /**
    * Evaluates all visible product text fields against policy and truth-in-advertising rules.
    */
   public evaluateProduct(product: ProductData): ProductPolicyResult {
