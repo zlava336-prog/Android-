@@ -95,15 +95,16 @@ export class PublicationGuard {
     jobId: string,
     platform: string,
     fingerprint: string,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown> | string
   ): PublicationRecord {
+    const metaObj = typeof metadata === 'string' ? { proofUri: metadata } : metadata;
     const key = this.makeKey(jobId, platform, fingerprint);
     const record: PublicationRecord = {
       jobId,
       platform: platform.toLowerCase(),
       fingerprint,
       publishedAt: Date.now(),
-      metadata,
+      metadata: metaObj,
     };
     this.publications.set(key, record);
     return record;

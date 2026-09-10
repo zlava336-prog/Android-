@@ -5,6 +5,7 @@
  */
 
 import { sha256 } from '../content/ContentFingerprint';
+export { sha256 };
 import { AiContentRequest } from './AiContentRequest';
 import { CanonicalContent } from './CanonicalContent';
 
@@ -21,6 +22,8 @@ export function computeAiRequestFingerprint(
 ): string {
   const canonicalParts = [
     `prod_fp:${request.productFingerprint || ''}`,
+    `prod_title:${request.productData?.title || ''}`,
+    `prod_price:${request.productData?.price ?? ''}`,
     `media_fps:${[...(request.mediaFingerprints || [])].sort().join(',')}`,
     `objective:${request.contentObjective}`,
     `audience:${request.targetAudience.trim().toLowerCase()}`,

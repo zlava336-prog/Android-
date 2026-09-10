@@ -144,6 +144,17 @@ export class ProductPolicyValidator {
   }
 
   /**
+   * Convenience validator returning boolean allowed flag and prohibited categories.
+   */
+  public validate(product: ProductData): { isAllowed: boolean; prohibitedCategories: string[] } {
+    const result = this.evaluateProduct(product);
+    return {
+      isAllowed: result.verdict !== 'BLOCK',
+      prohibitedCategories: result.warnings.filter(w => w.severity === 'BLOCK').map(w => w.category),
+    };
+  }
+
+  /**
    * Evaluates all visible product text fields against policy and truth-in-advertising rules.
    */
   public evaluateProduct(product: ProductData): ProductPolicyResult {

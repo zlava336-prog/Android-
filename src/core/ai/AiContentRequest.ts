@@ -56,6 +56,7 @@ export interface AiContentRequest {
   userProvidedInstructions?: string;
   generationConstraints?: GenerationConstraints;
   requestedAt?: number;
+  allowDeterministicFallback?: boolean;
 }
 
 export interface RequestValidationResult {
@@ -88,11 +89,23 @@ export function validateAiContentRequest(request: AiContentRequest): RequestVali
   }
 
   if (!request.productData) {
-    errors.push('Missing productData. Generation requires verified product information.');
+    errors.push('Missing ProductData. Generation requires verified product information.');
   } else {
     if (!request.productData.title && !request.productData.productName) {
       errors.push('ProductData must contain a valid title or productName');
     }
+  }
+
+  const allowedObjectives: ContentObjective[] = [
+    'AWARENESS',
+    'PRODUCT_SPOTLIGHT',
+    'EDUCATION',
+    'USE_CASE',
+    'ENGAGEMENT',
+    'CONVERSION',
+  ];
+  if (!request.contentObjective || !allowedObjectives.includes(request.contentObjective)) {
+    errors.push(`Invalid or missing contentObjective: ${request.contentObjective}`);
   }
 
   if (!request.productFingerprint || !request.productFingerprint.startsWith('pfp_')) {
@@ -115,6 +128,18 @@ export function validateAiContentRequest(request: AiContentRequest): RequestVali
   // Check for forbidden sensitive text in userProvidedInstructions
   let sensitiveFieldDetected: string | undefined;
   if (request.userProvidedInstructions) {
+    // Check prompt injection patterns
+    const PROMPT_INJECTION_REGEX = /\b(?:ignore\s+(?:all\s+)?(?:previous|prior|above)\s+instructions|system\s+prompt|developer\s+mode|disregard\s+(?:all\s+)?rules)\b/i;
+    if (PROMPT_INJECTION_REGEX.test(request.userProvidedInstructions)) {
+      errors.push('PROMPT_INJECTION: Instructions contain unauthorized prompt injection attempt.');
+    }
+
+    // Check Amazon credentials or session leaks
+    const CREDENTIAL_REGEX = /\b(?:amazon_cookie|session[- ]id|password|passwd|auth[- ]token|secret[- ]key)\b/i;
+    if (CREDENTIAL_REGEX.test(request.userProvidedInstructions)) {
+      errors.push('CREDENTIAL_LEAK_PREVENTION: Instructions contain prohibited Amazon credentials, session cookies, or sensitive keys.');
+    }
+
     for (const pattern of FORBIDDEN_SENSITIVE_PATTERNS) {
       if (pattern.regex.test(request.userProvidedInstructions)) {
         sensitiveFieldDetected = pattern.name;

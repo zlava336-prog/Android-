@@ -21,6 +21,8 @@ import {
   computeVariantFingerprint,
 } from './AiGenerationFingerprint';
 import { ContentNormalizer } from '../content/ContentNormalizer';
+import { EmergencyStopManager } from '../emergencyStop';
+import { LocalActionLogger } from '../logger';
 
 export class GroqContentProvider implements AiContentProvider {
   private config: AiProviderConfig;
@@ -52,9 +54,24 @@ export class GroqContentProvider implements AiContentProvider {
     const inputFingerprint = computeAiRequestFingerprint(request, provider, model);
     const genId = `gen_hook_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
-    // If live call requested and key is missing
-    if (!this.isAvailable()) {
-      // Deterministic safe hook fallback
+    // Clean AI_PROVIDER_UNAVAILABLE if key is missing and fallback not explicitly requested
+    if (!this.isAvailable() && !request.allowDeterministicFallback) {
+      return {
+        generationId: genId,
+        provider,
+        model,
+        inputFingerprint,
+        outputFingerprint: computeAiOutputFingerprint({}),
+        generatedAt: Date.now(),
+        status: 'AI_PROVIDER_UNAVAILABLE',
+        content: {},
+        warnings: ['AI_PROVIDER_UNAVAILABLE: Groq API key is not configured.'],
+        errorMessage: 'AI_PROVIDER_UNAVAILABLE: Groq API key is not configured.',
+        confidence: 0,
+      };
+    }
+
+    if (!this.isAvailable() && request.allowDeterministicFallback) {
       const hookText = this.synthesizeSafeHook(request, 'PROBLEM_SOLUTION');
       const outputFingerprint = computeAiOutputFingerprint({ hook: hookText });
       return {
@@ -71,7 +88,7 @@ export class GroqContentProvider implements AiContentProvider {
       };
     }
 
-    // When API key is available, execute structured live request or fallback
+    // When API key is available, execute structured live request with bounded retry
     try {
       const result = await this.callGroqApi(request, 'HOOK');
       const hookText = this.normalizer.normalizeWhitespace(result.hook || this.synthesizeSafeHook(request, 'PROBLEM_SOLUTION'));
@@ -89,6 +106,7 @@ export class GroqContentProvider implements AiContentProvider {
         confidence: 0.9,
       };
     } catch (err: any) {
+      const isUnavailable = err.message?.includes('AI_PROVIDER_UNAVAILABLE');
       return {
         generationId: genId,
         provider,
@@ -96,7 +114,7 @@ export class GroqContentProvider implements AiContentProvider {
         inputFingerprint,
         outputFingerprint: `gout_err_${Date.now()}`,
         generatedAt: Date.now(),
-        status: 'FAILED',
+        status: isUnavailable ? 'AI_PROVIDER_UNAVAILABLE' : 'FAILED',
         content: {},
         warnings: [`Groq API generation failed: ${err.message}`],
         errorMessage: err.message,
@@ -114,6 +132,22 @@ export class GroqContentProvider implements AiContentProvider {
     const inputFingerprint = computeAiRequestFingerprint(request, provider, model);
     const genId = `gen_title_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
+    if (!this.isAvailable() && !request.allowDeterministicFallback) {
+      return {
+        generationId: genId,
+        provider,
+        model,
+        inputFingerprint,
+        outputFingerprint: computeAiOutputFingerprint({}),
+        generatedAt: Date.now(),
+        status: 'AI_PROVIDER_UNAVAILABLE',
+        content: {},
+        warnings: ['AI_PROVIDER_UNAVAILABLE: Groq API key is not configured.'],
+        errorMessage: 'AI_PROVIDER_UNAVAILABLE: Groq API key is not configured.',
+        confidence: 0,
+      };
+    }
+
     const titleText = this.synthesizeSafeTitle(request);
     const outputFingerprint = computeAiOutputFingerprint({ title: titleText });
 
@@ -126,7 +160,7 @@ export class GroqContentProvider implements AiContentProvider {
       generatedAt: Date.now(),
       status: 'SUCCESS',
       content: { title: titleText, rawOutput: titleText },
-      warnings: !this.isAvailable() ? ['AI_PROVIDER_UNAVAILABLE: Using deterministic grounded synthesis.'] : [],
+      warnings: !this.isAvailable() ? ['Generated via deterministic grounded synthesis.'] : [],
       confidence: 0.98,
     };
   }
@@ -140,6 +174,22 @@ export class GroqContentProvider implements AiContentProvider {
     const inputFingerprint = computeAiRequestFingerprint(request, provider, model);
     const genId = `gen_desc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
+    if (!this.isAvailable() && !request.allowDeterministicFallback) {
+      return {
+        generationId: genId,
+        provider,
+        model,
+        inputFingerprint,
+        outputFingerprint: computeAiOutputFingerprint({}),
+        generatedAt: Date.now(),
+        status: 'AI_PROVIDER_UNAVAILABLE',
+        content: {},
+        warnings: ['AI_PROVIDER_UNAVAILABLE: Groq API key is not configured.'],
+        errorMessage: 'AI_PROVIDER_UNAVAILABLE: Groq API key is not configured.',
+        confidence: 0,
+      };
+    }
+
     const descText = this.synthesizeSafeDescription(request);
     const outputFingerprint = computeAiOutputFingerprint({ description: descText });
 
@@ -152,7 +202,7 @@ export class GroqContentProvider implements AiContentProvider {
       generatedAt: Date.now(),
       status: 'SUCCESS',
       content: { description: descText, rawOutput: descText },
-      warnings: !this.isAvailable() ? ['AI_PROVIDER_UNAVAILABLE: Using deterministic grounded synthesis.'] : [],
+      warnings: !this.isAvailable() ? ['Generated via deterministic grounded synthesis.'] : [],
       confidence: 0.95,
     };
   }
@@ -166,6 +216,22 @@ export class GroqContentProvider implements AiContentProvider {
     const inputFingerprint = computeAiRequestFingerprint(request, provider, model);
     const genId = `gen_tags_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
+    if (!this.isAvailable() && !request.allowDeterministicFallback) {
+      return {
+        generationId: genId,
+        provider,
+        model,
+        inputFingerprint,
+        outputFingerprint: computeAiOutputFingerprint({}),
+        generatedAt: Date.now(),
+        status: 'AI_PROVIDER_UNAVAILABLE',
+        content: {},
+        warnings: ['AI_PROVIDER_UNAVAILABLE: Groq API key is not configured.'],
+        errorMessage: 'AI_PROVIDER_UNAVAILABLE: Groq API key is not configured.',
+        confidence: 0,
+      };
+    }
+
     const hashtags = this.synthesizeSafeHashtags(request);
     const outputFingerprint = computeAiOutputFingerprint({ hashtags });
 
@@ -178,7 +244,7 @@ export class GroqContentProvider implements AiContentProvider {
       generatedAt: Date.now(),
       status: 'SUCCESS',
       content: { hashtags, rawOutput: hashtags.join(' ') },
-      warnings: !this.isAvailable() ? ['AI_PROVIDER_UNAVAILABLE: Using deterministic grounded synthesis.'] : [],
+      warnings: !this.isAvailable() ? ['Generated via deterministic grounded synthesis.'] : [],
       confidence: 0.95,
     };
   }
@@ -192,6 +258,22 @@ export class GroqContentProvider implements AiContentProvider {
     const inputFingerprint = computeAiRequestFingerprint(request, provider, model);
     const genId = `gen_cta_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
+    if (!this.isAvailable() && !request.allowDeterministicFallback) {
+      return {
+        generationId: genId,
+        provider,
+        model,
+        inputFingerprint,
+        outputFingerprint: computeAiOutputFingerprint({}),
+        generatedAt: Date.now(),
+        status: 'AI_PROVIDER_UNAVAILABLE',
+        content: {},
+        warnings: ['AI_PROVIDER_UNAVAILABLE: Groq API key is not configured.'],
+        errorMessage: 'AI_PROVIDER_UNAVAILABLE: Groq API key is not configured.',
+        confidence: 0,
+      };
+    }
+
     const ctaText = this.synthesizeSafeCta(request);
     const outputFingerprint = computeAiOutputFingerprint({ callToAction: ctaText });
 
@@ -204,7 +286,7 @@ export class GroqContentProvider implements AiContentProvider {
       generatedAt: Date.now(),
       status: 'SUCCESS',
       content: { callToAction: ctaText, rawOutput: ctaText },
-      warnings: !this.isAvailable() ? ['AI_PROVIDER_UNAVAILABLE: Using deterministic grounded synthesis.'] : [],
+      warnings: !this.isAvailable() ? ['Generated via deterministic grounded synthesis.'] : [],
       confidence: 0.95,
     };
   }
@@ -223,6 +305,22 @@ export class GroqContentProvider implements AiContentProvider {
     const model = this.getModelName();
     const inputFingerprint = computeAiRequestFingerprint(request, provider, model);
     const genId = `gen_cap_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+
+    if (!this.isAvailable() && !request.allowDeterministicFallback) {
+      return {
+        generationId: genId,
+        provider,
+        model,
+        inputFingerprint,
+        outputFingerprint: computeAiOutputFingerprint({}),
+        generatedAt: Date.now(),
+        status: 'AI_PROVIDER_UNAVAILABLE',
+        content: {},
+        warnings: ['AI_PROVIDER_UNAVAILABLE: Groq API key is not configured.'],
+        errorMessage: 'AI_PROVIDER_UNAVAILABLE: Groq API key is not configured.',
+        confidence: 0,
+      };
+    }
 
     const hook = this.synthesizeSafeHook(request, 'PROBLEM_SOLUTION');
     const productContext = this.synthesizeSafeProductContext(request);
@@ -263,7 +361,7 @@ export class GroqContentProvider implements AiContentProvider {
         productHighlights: verifiedFeatures,
         rawOutput: fullCaption,
       },
-      warnings: !this.isAvailable() ? ['AI_PROVIDER_UNAVAILABLE: Using deterministic grounded synthesis.'] : [],
+      warnings: !this.isAvailable() ? ['Generated via deterministic grounded synthesis.'] : [],
       confidence: 0.95,
     };
   }
@@ -276,6 +374,10 @@ export class GroqContentProvider implements AiContentProvider {
     request: AiContentRequest,
     count: number = 3
   ): Promise<ContentVariant[]> {
+    if (!this.isAvailable() && !request.allowDeterministicFallback) {
+      return [];
+    }
+
     const provider = this.getProviderName();
     const model = this.getModelName();
     const inputFingerprint = computeAiRequestFingerprint(request, provider, model);
@@ -437,6 +539,7 @@ export class GroqContentProvider implements AiContentProvider {
   /**
    * Internal live Groq API call helper.
    * NEVER sends passwords, OTPs, credentials, or cookies.
+   * Bounded to max 2 retries. Halts immediately if EmergencyStop is active.
    */
   private async callGroqApi(request: AiContentRequest, promptType: string): Promise<any> {
     const apiKey = this.config.getApiKeyInternal();
@@ -444,7 +547,12 @@ export class GroqContentProvider implements AiContentProvider {
       throw new Error('AI_PROVIDER_UNAVAILABLE: Groq API key is missing.');
     }
 
+    if (EmergencyStopManager.getInstance().isActive()) {
+      throw new Error('EMERGENCY_STOP_ACTIVE: Generation aborted because emergency stop is triggered.');
+    }
+
     const settings = this.config.getSettings();
+    const maxRetries = Math.min(2, settings.maxRetries ?? 2);
     const endpoint = `${settings.baseUrl}/chat/completions`;
 
     // Only send strictly public, verified product information
@@ -470,45 +578,75 @@ Voice: ${request.brandVoice}
 Target Audience: ${request.targetAudience}
 Task: Generate structured ${promptType}`;
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), settings.timeoutMs || 15000);
+    let lastError: any = null;
 
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: settings.model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt },
-          ],
-          temperature: settings.temperature ?? 0.7,
-          max_tokens: settings.maxTokens ?? 1000,
-          response_format: { type: 'json_object' },
-        }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`Groq API returned HTTP ${response.status}: ${response.statusText}`);
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      if (EmergencyStopManager.getInstance().isActive()) {
+        throw new Error('EMERGENCY_STOP_ACTIVE: Generation aborted because emergency stop is triggered.');
       }
 
-      const json = await response.json();
-      const rawContent = json?.choices?.[0]?.message?.content;
-      if (!rawContent) {
-        throw new Error('Groq returned an empty response.');
+      if (attempt > 0) {
+        LocalActionLogger.getInstance().log({
+          action: 'AI_GENERATION_RETRIED',
+          details: `Retrying Groq API generation for ${promptType} (Attempt ${attempt}/${maxRetries}): ${lastError?.message || 'Previous attempt failed'}`,
+          severity: 'WARN',
+          safetyCheckPassed: true,
+        });
       }
 
-      return JSON.parse(rawContent);
-    } catch (err: any) {
-      clearTimeout(timeoutId);
-      throw err;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), settings.timeoutMs || 15000);
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: settings.model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt },
+            ],
+            temperature: settings.temperature ?? 0.7,
+            max_tokens: settings.maxTokens ?? 1000,
+            response_format: { type: 'json_object' },
+          }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`Groq API returned HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const json = await response.json();
+        const rawContent = json?.choices?.[0]?.message?.content;
+        if (!rawContent) {
+          throw new Error('Groq returned an empty response.');
+        }
+
+        try {
+          return JSON.parse(rawContent);
+        } catch {
+          throw new Error('MALFORMED_AI_RESPONSE: Groq response content was not valid JSON.');
+        }
+      } catch (err: any) {
+        clearTimeout(timeoutId);
+        lastError = err;
+        // Do not retry on emergency stop or missing auth
+        if (EmergencyStopManager.getInstance().isActive()) {
+          throw new Error('EMERGENCY_STOP_ACTIVE: Generation aborted because emergency stop is triggered.');
+        }
+        if (attempt === maxRetries) {
+          throw lastError;
+        }
+      }
     }
+
+    throw lastError || new Error('Groq generation failed after retries.');
   }
 }

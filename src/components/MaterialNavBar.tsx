@@ -12,12 +12,16 @@ import {
   Share2,
   FileCheck,
   ShoppingBag,
+  Video,
+  Cpu,
 } from 'lucide-react';
 
 export type NavScreen =
   | 'home'
+  | 'master_workflow'
   | 'product_research'
   | 'content_review'
+  | 'video_studio'
   | 'multi_job'
   | 'current_job'
   | 'apps'
@@ -44,8 +48,10 @@ interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { id: 'home', label: 'Home', icon: Home },
+  { id: 'master_workflow', label: 'E2E Workflow', icon: Cpu, badge: 'Phase 2O' },
   { id: 'product_research', label: 'Product Research', icon: ShoppingBag, badge: 'Step 2K' },
   { id: 'content_review', label: 'Content Review', icon: FileCheck, badge: 'Step 2J' },
+  { id: 'video_studio', label: 'Video Studio', icon: Video, badge: 'Step 2M' },
   { id: 'multi_job', label: 'Multi-Platform Job', icon: Share2, badge: 'New' },
   { id: 'current_job', label: 'Current Job', icon: Layers },
   { id: 'apps', label: 'Adapter Registry', icon: Smartphone },
@@ -53,7 +59,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'logs', label: 'Logs', icon: FileText },
   { id: 'permissions', label: 'Permissions', icon: ShieldCheck },
   { id: 'emergency_stop', label: 'Emergency Stop', icon: AlertOctagon },
-  { id: 'tests', label: 'Unit Tests', icon: CheckSquare, badge: '401' },
+  { id: 'tests', label: 'Unit Tests', icon: CheckSquare, badge: '900+' },
   { id: 'about', label: 'About', icon: Info },
 ];
 

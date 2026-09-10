@@ -22,6 +22,7 @@ export interface ProductPriceStructure {
 export interface ProductData {
   // Core Identifiers
   productId?: string;
+  asin?: string; // Alias for Amazon ASIN
   source: ProductSourceType;
   sourceUrl?: string;
   sourceUrlFingerprint?: string;
@@ -51,19 +52,23 @@ export interface ProductData {
   // Content Details
   description?: string;
   keyFeatures?: string[];
+  features?: string[]; // Alias for keyFeatures
   benefits?: string[];
   specifications?: Record<string, string>;
 
   // Media (strictly local references only: content://, file://)
   imageAssets?: MediaAsset[];
+  imageUrl?: string; // Optional convenience reference
 
   // Meta & Provenance
   sourceTimestamp: number;
+  extractedAt?: number; // Alias for sourceTimestamp
   dataFingerprint?: string; // pfp_<sha256>
   researchSessionId?: string;
   overallConfidence: number; // 0.0 to 1.0
   validationStatus: ProductValidationStatus;
   fieldProvenance: ProductFieldProvenance[];
+  provenance?: any; // Compatibility alias
   conflicts?: ProductFieldConflict[];
 
   // Optional Monetization
@@ -106,7 +111,12 @@ export function createDefaultProductData(params: Partial<ProductData> & { title:
     overallConfidence: params.overallConfidence !== undefined ? params.overallConfidence : 1.0,
     validationStatus: params.validationStatus || 'NEEDS_REVIEW',
     fieldProvenance: params.fieldProvenance ? [...params.fieldProvenance] : [],
+    provenance: params.provenance,
     conflicts: params.conflicts ? [...params.conflicts] : [],
     affiliateLink: params.affiliateLink,
+    asin: params.asin,
+    features: params.features ? [...params.features] : (params.keyFeatures ? [...params.keyFeatures] : []),
+    imageUrl: params.imageUrl,
+    extractedAt: params.extractedAt || params.sourceTimestamp || Date.now(),
   };
 }

@@ -126,7 +126,7 @@ export class FactGroundingValidator {
           id: `claim_price_${claims.length}`,
           claimType: 'PRICE',
           claimText: fullMatch,
-          classification: 'UNKNOWN',
+          classification: 'UNSUPPORTED',
           reason: `Invented price "${fullMatch}": Product price is UNKNOWN in verified ProductData.`,
           location,
           severity: 'BLOCK',
@@ -304,6 +304,9 @@ export class FactGroundingValidator {
       'pediatrician recommended',
       'clinically tested',
       'certified organic',
+      'mil-spec',
+      'military grade',
+      'certified military',
     ];
     for (const cert of certPatterns) {
       if (lowerText.includes(cert)) {

@@ -7,8 +7,10 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MaterialTopBar } from './components/MaterialTopBar';
 import { MaterialNavBar, NavScreen } from './components/MaterialNavBar';
 import { HomeScreen } from './components/screens/HomeScreen';
+import { MasterWorkflowScreen } from './components/screens/MasterWorkflowScreen';
 import { ProductResearchScreen } from './components/screens/ProductResearchScreen';
 import { ContentReviewScreen } from './components/screens/ContentReviewScreen';
+import { VideoStudioScreen } from './components/screens/VideoStudioScreen';
 import { MultiPlatformJobScreen } from './components/screens/MultiPlatformJobScreen';
 import { CurrentJobScreen } from './components/screens/CurrentJobScreen';
 import { AppConnectionsScreen } from './components/screens/AppConnectionsScreen';
@@ -942,6 +944,10 @@ export default function App() {
             />
           )}
 
+          {currentScreen === 'master_workflow' && (
+            <MasterWorkflowScreen theme={theme} />
+          )}
+
           {currentScreen === 'product_research' && (
             <ProductResearchScreen
               theme={theme}
@@ -951,6 +957,13 @@ export default function App() {
 
           {currentScreen === 'content_review' && (
             <ContentReviewScreen
+              theme={theme}
+              onNavigateToPlan={() => setCurrentScreen('multi_job')}
+            />
+          )}
+
+          {currentScreen === 'video_studio' && (
+            <VideoStudioScreen
               theme={theme}
               onNavigateToPlan={() => setCurrentScreen('multi_job')}
             />

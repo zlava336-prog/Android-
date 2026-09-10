@@ -115,14 +115,14 @@ export function sha256(input: string | Uint8Array): string {
  */
 export function computeMediaFingerprint(asset: MediaAsset): string {
   const canonical = JSON.stringify({
-    localUri: asset.localUri.trim(),
-    mimeType: asset.mimeType.trim().toLowerCase(),
-    mediaType: asset.mediaType,
-    sizeBytes: asset.sizeBytes,
-    width: asset.width,
-    height: asset.height,
-    durationMs: asset.durationMs || 0,
-    sha256: (asset.sha256 || '').trim().toLowerCase(),
+    localUri: (asset.localUri || (asset as any).uri || '').trim(),
+    mimeType: (asset.mimeType || 'video/mp4').trim().toLowerCase(),
+    mediaType: asset.mediaType || (asset as any).type || 'VIDEO',
+    sizeBytes: asset.sizeBytes || 0,
+    width: asset.width || 0,
+    height: asset.height || 0,
+    durationMs: asset.durationMs || ((asset as any).durationSeconds ? (asset as any).durationSeconds * 1000 : 0),
+    sha256: (asset.sha256 || (asset as any).fingerprint || '').trim().toLowerCase(),
   });
   return `mfp_${sha256(canonical)}`;
 }
@@ -133,7 +133,7 @@ export function computeMediaFingerprint(asset: MediaAsset): string {
 export function computeMediaCollectionFingerprint(assets: MediaAsset[]): string {
   if (!assets || assets.length === 0) return 'mfp_empty';
   const sorted = [...assets]
-    .sort((a, b) => a.assetId.localeCompare(b.assetId))
+    .sort((a, b) => ((a.assetId || (a as any).id || '')).localeCompare((b.assetId || (b as any).id || '')))
     .map(computeMediaFingerprint);
   return `mfp_coll_${sha256(sorted.join('::'))}`;
 }

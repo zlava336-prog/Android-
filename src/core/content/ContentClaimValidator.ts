@@ -21,14 +21,14 @@ export class ContentClaimValidator {
     // 1. Medical Claims
     {
       category: 'MEDICAL_CLAIM',
-      regex: /\b(?:cures?|permanently\s+removes?|permanently\s+cures?|heals?|treats?)\s+(?:acne|cancer|disease|illness|diabetes|infection|depression|anxiety|baldness|hypertension)\b/i,
+      regex: /\b(?:cures?|cure\s+for|permanently\s+(?:removes?|cures?|eliminates?)|eliminates?|heals?|treats?)\s+(?:[\w\s]{0,20})?(?:acne|cancer|disease|neck\s+disease|illness|diabetes|infection|depression|anxiety|baldness|hypertension|arthritis|pain|chronic\s+pain|spinal\s+pain|spine)\b/i,
       reason: 'Unsubstantiated medical treatment or cure claim detected. Health/medical claims require verified clinical authorization and human operator sign-off.',
       severity: 'BLOCK',
     },
     {
       category: 'MEDICAL_CLAIM',
-      regex: /\b(?:fda\s+approved|medical\s+grade|miracle\s+cure|clinically\s+proven\s+to\s+cure)\b/i,
-      reason: 'Unverified medical certification or miracle cure phrasing detected.',
+      regex: /\b(?:fda\s+approved|medical\s+grade|miracle\s+cure|clinically\s+proven\s+to\s+cure|prescribed\s+by|recommended\s+by\s+(?:top\s+)?(?:doctors?|cardiologists?|surgeons?|orthopedic\s+surgeons?)|doctor\s+recommended)\b/i,
+      reason: 'Unverified medical certification or clinical endorsement phrasing detected.',
       severity: 'BLOCK',
     },
 
@@ -43,7 +43,7 @@ export class ContentClaimValidator {
     // 3. Guaranteed Earnings
     {
       category: 'GUARANTEED_EARNINGS',
-      regex: /\b(?:guaranteed\s+(?:income|earnings|wealth|returns)|make\s+\$\d+[\d,]*\s*(?:\/day|\/week|\/month|\s+per\s+day)\s+guaranteed|get\s+rich\s+quick)\b/i,
+      regex: /\b(?:guaranteed\s+(?:to\s+make|income|earnings|wealth|returns)|make\s+\$\d+[\d,]*\s*(?:\/day|\/week|\/month|\s+per\s+day|a\s+day)|get\s+rich\s+quick|passive\s+income\s+guaranteed)\b/i,
       reason: 'Deceptive financial or guaranteed earnings claim detected.',
       severity: 'BLOCK',
     },
@@ -86,6 +86,12 @@ export class ContentClaimValidator {
       regex: /\b(?:99%\s+off\s+today\s+only|free\s+money|everything\s+100%\s+free\s+forever)\b/i,
       reason: 'Suspected misleading discount or predatory price claim detected.',
       severity: 'WARN',
+    },
+    {
+      category: 'FABRICATED_DISCOUNT',
+      regex: /\b(?:100%\s*free\s+gift.*(?:billing|credit\s+card|pay\s+shipping)|free\s+gift.*(?:billing|credit\s+card))\b/i,
+      reason: 'Deceptive free gift bait-and-switch requiring billing details detected.',
+      severity: 'BLOCK',
     },
 
     // 9. Fabricated Testimonials

@@ -88,6 +88,18 @@ export class SafeUiInspector implements UiInspector {
   private simulatedNodes: UiNode[] = [];
   private tripwireSimulated: boolean = false;
   private tripwireReason: string = '';
+  private static instance: SafeUiInspector | null = null;
+
+  public static getInstance(packageName: string = 'com.instagram.android', nodes?: UiNode[]): SafeUiInspector {
+    if (!SafeUiInspector.instance) {
+      SafeUiInspector.instance = new SafeUiInspector(packageName, nodes);
+    }
+    return SafeUiInspector.instance;
+  }
+
+  public static resetInstance(): void {
+    SafeUiInspector.instance = null;
+  }
 
   constructor(packageName: string = 'com.instagram.android', nodes?: UiNode[]) {
     this.currentPackageName = packageName;
@@ -112,6 +124,10 @@ export class SafeUiInspector implements UiInspector {
   public clearSecurityTripwire(): void {
     this.tripwireSimulated = false;
     this.tripwireReason = '';
+  }
+
+  public inspectCurrentScreen(): UiNode[] {
+    return [...this.simulatedNodes];
   }
 
   public async getRootNode(): Promise<UiNode | null> {

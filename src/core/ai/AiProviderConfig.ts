@@ -20,29 +20,43 @@ export interface AiProviderSettings {
 
 export class AiProviderConfig {
   private static instance: AiProviderConfig | null = null;
-  private apiKey: string | null = null;
+  #apiKey: string | null = null;
   private settings: AiProviderSettings;
 
-  private constructor() {
+  public constructor(custom?: {
+    apiKey?: string;
+    provider?: string;
+    providerName?: string;
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+    baseUrl?: string;
+    timeoutMs?: number;
+    maxRetries?: number;
+  }) {
     this.settings = {
-      providerName: 'groq',
-      model: 'llama-3.3-70b-versatile',
-      temperature: 0.7,
-      maxTokens: 1500,
-      baseUrl: 'https://api.groq.com/openai/v1',
-      timeoutMs: 15000,
-      maxRetries: 2,
+      providerName: custom?.providerName || (custom?.provider?.toLowerCase() === 'groq' ? 'groq' : (custom?.provider || 'groq')),
+      model: custom?.model || 'llama-3.3-70b-versatile',
+      temperature: custom?.temperature !== undefined ? Math.max(0.0, Math.min(1.0, custom.temperature)) : 0.7,
+      maxTokens: custom?.maxTokens || 1500,
+      baseUrl: custom?.baseUrl || 'https://api.groq.com/openai/v1',
+      timeoutMs: custom?.timeoutMs || 15000,
+      maxRetries: custom?.maxRetries !== undefined ? Math.max(0, Math.min(2, custom.maxRetries)) : 2,
     };
 
-    // Safely check environment at runtime without throwing if missing
-    try {
-      if (typeof process !== 'undefined' && process.env && process.env.GROQ_API_KEY) {
-        this.apiKey = process.env.GROQ_API_KEY.trim();
-      } else if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.VITE_GROQ_API_KEY) {
-        this.apiKey = String((import.meta as any).env.VITE_GROQ_API_KEY).trim();
+    if (custom?.apiKey !== undefined) {
+      this.#apiKey = custom.apiKey.trim();
+    } else {
+      // Safely check environment at runtime without throwing if missing
+      try {
+        if (typeof process !== 'undefined' && process.env && process.env.GROQ_API_KEY) {
+          this.#apiKey = process.env.GROQ_API_KEY.trim();
+        } else if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.VITE_GROQ_API_KEY) {
+          this.#apiKey = String((import.meta as any).env.VITE_GROQ_API_KEY).trim();
+        }
+      } catch {
+        // Sandboxed or browser context
       }
-    } catch {
-      // Sandboxed or browser context
     }
   }
 
@@ -62,9 +76,9 @@ export class AiProviderConfig {
    */
   public setApiKey(key: string | null): void {
     if (!key || key.trim().length === 0) {
-      this.apiKey = null;
+      this.#apiKey = null;
     } else {
-      this.apiKey = key.trim();
+      this.#apiKey = key.trim();
     }
   }
 
@@ -72,7 +86,39 @@ export class AiProviderConfig {
    * Returns whether a valid API key is present.
    */
   public hasApiKey(): boolean {
-    return Boolean(this.apiKey && this.apiKey.length > 0);
+    if (!this.#apiKey || this.#apiKey.trim().length === 0) return false;
+    const lower = this.#apiKey.toLowerCase();
+    if (
+      lower.includes('placeholder') ||
+      lower.includes('your_api_key') ||
+      lower.includes('example') ||
+      lower.includes('todo') ||
+      lower.trim() === 'your_api_key_here'
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  public hasValidKey(): boolean {
+    return this.hasApiKey();
+  }
+
+  public getProvider(): string {
+    return this.settings.providerName.toUpperCase();
+  }
+
+  public toJSON(): object {
+    return {
+      providerName: this.settings.providerName,
+      model: this.settings.model,
+      temperature: this.settings.temperature,
+      maxTokens: this.settings.maxTokens,
+      baseUrl: this.settings.baseUrl,
+      timeoutMs: this.settings.timeoutMs,
+      maxRetries: this.settings.maxRetries,
+      hasKey: this.hasApiKey(),
+    };
   }
 
   /**
@@ -80,23 +126,23 @@ export class AiProviderConfig {
    * NEVER pass this result to loggers, serializers, or UI components.
    */
   public getApiKeyInternal(): string | null {
-    return this.apiKey;
+    return this.#apiKey;
   }
 
   /**
    * Clears in-memory API key immediately.
    */
   public clearApiKey(): void {
-    this.apiKey = null;
+    this.#apiKey = null;
   }
 
   /**
    * Safe masked key representation for UI display only (e.g. "gsk_...****").
    */
   public getMaskedApiKey(): string {
-    if (!this.apiKey) return 'NOT_CONFIGURED';
-    if (this.apiKey.length <= 8) return '****';
-    const prefix = this.apiKey.slice(0, 4);
+    if (!this.#apiKey) return 'NOT_CONFIGURED';
+    if (this.#apiKey.length <= 8) return '****';
+    const prefix = this.#apiKey.slice(0, 4);
     return `${prefix}...****`;
   }
 

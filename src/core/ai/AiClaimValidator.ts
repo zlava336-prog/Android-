@@ -125,4 +125,22 @@ export class AiClaimValidator {
       evaluatedAt: Date.now(),
     };
   }
+
+  public validateClaims(
+    text: string,
+    productData: ProductData,
+    userInstructions?: string,
+    location: string = 'ai_output'
+  ): AiClaimValidationResult {
+    return this.validateGeneratedContent(text, productData, location, userInstructions);
+  }
+
+  public validateContent(
+    text: string,
+    productData: ProductData,
+    userInstructions?: string,
+    location: string = 'ai_output'
+  ): AiClaimValidationResult {
+    return this.validateGeneratedContent(text, productData, location, userInstructions);
+  }
 }

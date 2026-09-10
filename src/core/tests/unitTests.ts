@@ -21,6 +21,10 @@ import { runOrchestrationTests } from './orchestrationTests';
 import { runPersistenceRecoveryTests } from './persistenceRecoveryTests';
 import { runContentPipelineTests } from './contentPipelineTests';
 import { runProductResearchTests } from './productResearchTests';
+import { runAiPipelineTests } from './aiPipelineTests';
+import { runVideoPipelineTests } from './videoPipelineTests';
+import { runMasterOrchestratorTests } from './masterOrchestratorTests';
+import { runEndToEndWorkflowTests } from './endToEndWorkflowTests';
 
 export interface TestResult {
   id: string;
@@ -4829,6 +4833,18 @@ export async function runAllUnitTests(): Promise<TestResult[]> {
 
   // Section: Step 2K Product Research & Intelligence Pipeline Tests (75 tests)
   await runProductResearchTests(runTest);
+
+  // Section: Step 2L AI Content Generation Pipeline Tests (90 tests)
+  await runAiPipelineTests(runTest);
+
+  // Section: Step 2M Production-Grade Video Creation & Editing Pipeline Tests (96 tests)
+  await runVideoPipelineTests(runTest);
+
+  // Section: Step 2N Production-Grade Master AI Orchestrator Tests (148 tests)
+  await runMasterOrchestratorTests(runTest);
+
+  // Section: Phase 2O Production End-to-End Workflow & Human Approval Tests (155 tests)
+  await runEndToEndWorkflowTests(runTest);
 
   return results;
 }
